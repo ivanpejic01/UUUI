@@ -98,18 +98,15 @@ public class Solution {
 				
 		/*provjeri zastavicu*/
 		if (argumenti.indexOf("--check-optimistic") > -1) {
-			zastavica = "--check-optimictic";
+			zastavica = "--check-optimistic";
 		} 
 		else if (argumenti.indexOf("--check-consistent") > -1) {
 			zastavica = "--check-consistent";
 		}
+		
 		else {
 			zastavica = "";
 		}
-		if (!zastavica.equals("")) {
-			System.out.println("Zastavica " + zastavica);
-		}
-		
 		if (algoritam.equals("bfs")) {
 			bfsAlgoritam();
 		}
@@ -120,6 +117,14 @@ public class Solution {
 		
 		if (algoritam.equals("astar")) {
 			aStarAlgoritam();
+		}
+		
+		if (zastavica.equals("--check-optimistic")) {
+			provjeriOptimisticnost();
+		}
+		
+		else if (zastavica.equals("--check-consistent")) {
+			provjeriKonzistentnost();
 		}
 		
 	}
@@ -169,7 +174,6 @@ public class Solution {
 			open.remove(0);
 			if (konacnaStanja.contains(cvorSVrha.stanje)) {
 				imaRjesenja = true;
-				System.out.println("Kraj");
 				closed.add(cvorSVrha);
 				break;
 			}
@@ -204,7 +208,6 @@ public class Solution {
 			open.remove(0);
 			if (konacnaStanja.contains(cvorSVrha.stanje)) {
 				imaRjesenja = true;
-				System.out.println("Kraj");
 				closed.add(cvorSVrha);
 				break;
 			}
@@ -242,6 +245,107 @@ public class Solution {
 		}
 		
 		ispisBfsUcsAstar(algoritam, imaRjesenja, cvorSVrha, closed);
+	}
+	
+	public static Double cijena(String trenutnoStanje) {
+		Cvor cvorSVrha = new Cvor(trenutnoStanje, null, 0.0, 0.0);
+		boolean imaRjesenja = false;
+		List<Cvor> open = new LinkedList<>();
+		List<Cvor> closed = new LinkedList<>();
+		Map<String, Double> pomMapa = new TreeMap<>();
+		open.add(cvorSVrha);
+		while(!open.isEmpty()) {
+			cvorSVrha = open.get(0);
+			open.remove(0);
+			if (konacnaStanja.contains(cvorSVrha.stanje)) {
+				imaRjesenja = true;
+				closed.add(cvorSVrha);
+				break;
+			}
+			
+			pomMapa = susjedniCvorovi.get(cvorSVrha.stanje);
+			closed.add(cvorSVrha);
+			for (Map.Entry<String, Double> entry: pomMapa.entrySet()) {
+				if (closed.stream().filter(cvor -> cvor.stanje.equals(entry.getKey())).findFirst().orElse(null) == null) {
+				open.add(new Cvor(entry.getKey(), cvorSVrha, entry.getValue() + cvorSVrha.cijena, 0.0));
+				}
+			}
+			open.sort(Comparator.comparing(Cvor::getCijena)
+                    .thenComparing(Comparator.comparing(Cvor::getStanje)));
+			
+		}
+		
+		return cvorSVrha.cijena;
+		
+	}
+	
+	public static void provjeriOptimisticnost() {
+		List<String> linijeZaIspis = new LinkedList<>();
+		linijeZaIspis.add("# HEURISTIC-OPTIMISTIC " + putanjaHeuristika);
+		Double pravaCijena;
+		Double heuristika;
+		boolean postojiGreska = false;
+		
+		for (String trenutnoStanje: susjedniCvorovi.keySet()) {
+			pravaCijena = cijena(trenutnoStanje);
+			heuristika = mapaHeuristika.get(trenutnoStanje);
+			if (heuristika <= pravaCijena) {
+				linijeZaIspis.add("[CONDITION]: [OK] h(" + trenutnoStanje + ") <= h*: " + heuristika + " <= " + pravaCijena);
+			}
+			else {
+				postojiGreska = true;
+				linijeZaIspis.add("[CONDITION]: [ERR] h(" + trenutnoStanje + ") <= h*: " + heuristika + " <= " + pravaCijena);
+			}
+		}
+		if (postojiGreska) {
+			linijeZaIspis.add("[CONCLUSION]: Heuristic is not optimistic.");
+		}
+		else {
+			linijeZaIspis.add("[CONCLUSION]: Heuristic is optimistic.");
+		}
+		
+		for (String linija: linijeZaIspis) {
+			System.out.println(linija);
+		}
+	}
+	
+	public static void provjeriKonzistentnost() {
+		
+		List<String> linijeZaIspis = new LinkedList<>();
+		Map<String, Double> pomMapa = new TreeMap<>();
+		Double trenutnaHeuristika;
+		Double susjednaHeuristika;
+		Double susjednaCijena;
+		boolean postojiGreska = false;
+		
+		linijeZaIspis.add("# HEURISTIC-CONSISTENT " + putanjaHeuristika);
+		for (String trenutnoStanje: susjedniCvorovi.keySet()) {
+			pomMapa = susjedniCvorovi.get(trenutnoStanje);
+			trenutnaHeuristika = mapaHeuristika.get(trenutnoStanje);
+			for (Map.Entry<String, Double> entry: pomMapa.entrySet()) {
+				susjednaHeuristika = mapaHeuristika.get(entry.getKey());
+				susjednaCijena = entry.getValue();
+				if (trenutnaHeuristika <= susjednaHeuristika + susjednaCijena) {
+					linijeZaIspis.add("[CONDITION]: [OK] h(" + trenutnoStanje + ") <= h(" + entry.getKey() + ") + c: " 
+							+ trenutnaHeuristika + " <= " + susjednaHeuristika + " + " + susjednaCijena);
+				} 
+				else {
+					linijeZaIspis.add("[CONDITION]: [ERR] h(" + trenutnoStanje + ") <= h(" + entry.getKey() + ") + c: " 
+							+ trenutnaHeuristika + " <= " + susjednaHeuristika + " + " + susjednaCijena);
+					postojiGreska = true;
+				}
+			}
+			
+		}
+		if (postojiGreska) {
+			linijeZaIspis.add("[CONCLUSION]: Heuristic is not consistent.");
+		}
+		else {
+			linijeZaIspis.add("[CONCLUSION]: Heuristic is consistent.");
+		}
+		for (String linija: linijeZaIspis) {
+			System.out.println(linija);
+		}
 	}
 	
 	public static void ispisBfsUcsAstar(String algoritam, boolean imaRjesenja, Cvor cvorSVrha, List<Cvor> closed) {
