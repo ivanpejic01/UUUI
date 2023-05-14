@@ -29,6 +29,8 @@ public class Solution {
 		datotekaProvjera = new File(putanjaDatotekaProvjera);
 		
 		model.fit(datotekaUcenje);
+		model.predict(datotekaProvjera);
+		
 		
 		
 		
