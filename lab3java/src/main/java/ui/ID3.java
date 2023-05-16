@@ -15,6 +15,8 @@ import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.lang.Math;
 
 public class ID3 {
@@ -25,7 +27,7 @@ public class ID3 {
 	public static List<Cvor> listaCvorova = new ArrayList<>();
 	public static List<Cvor> stablo = new ArrayList<>();
 	public static String ciljnaVarijabla = new String();
-	public static HashSet<String> vrijednostiCiljneVarijable = new HashSet<>();
+	public static Set<String> vrijednostiCiljneVarijable = new TreeSet<>();
 	public static ArrayList<String> sveVrijednostiCiljneVarijable = new ArrayList<>();
 	public static Map<String, HashSet<String>> mapaZnacajkaVrijednostiTest = new HashMap<>();
 	public static Map<String, ArrayList<String>> mapaZnacajkaSveVrijednostiTest = new HashMap<>();
@@ -37,7 +39,7 @@ public class ID3 {
 		
 	}
 	
-	public void fit(File datotekaUcenje) throws FileNotFoundException {
+	public void fit(File datotekaUcenje, int parametarDubina) throws FileNotFoundException {
 		
 		Scanner scanUcenje = new Scanner(datotekaUcenje, "UTF-8");
 		
@@ -134,10 +136,12 @@ public class ID3 {
 				Double entropija = 0.0;
 
 				for (Map.Entry<String, Integer> entry: brojZaVrijednost.entrySet()) {
+					System.out.println("Pojava vrijednosti " + entry.getKey() + " " + entry.getValue());
+					System.out.println("Nazivnik " + sveVrijednostiCiljneVarijable.size());
 					Double razlomak = (Double.valueOf(entry.getValue()) / sveVrijednostiCiljneVarijable.size());
 					entropija -= (razlomak * (Math.log(razlomak) / Math.log(2)));	
 				}
-				//System.out.println("Znacajka = " + znacajke[i] + " entropija " + entropija);
+				System.out.println("Znacajka = " + znacajke[i] + " entropija " + entropija);
 				znacajkaEntropija.put(znacajke[i], entropija);
 				
 				Double informacijskaDobit = entropija;
@@ -189,10 +193,10 @@ public class ID3 {
 					informacijskaDobit -= (Double.valueOf(nazivnik) / sveVrijednostiCiljneVarijable.size()) * malaEntropija;
 					
 				}
-				System.out.println("Umecem za znacajku " + znacajke[i] + " sljedece vrijednosti");
+				//System.out.println("Umecem za znacajku " + znacajke[i] + " sljedece vrijednosti");
 				dijeteGranaEntropija.put(znacajke[i], granaEntropija);
 				for(Map.Entry<String, Double> ulaz: granaEntropija.entrySet()) {
-					System.out.println("grana = " + ulaz.getKey() + " entropija = " + ulaz.getValue());
+					//System.out.println("grana = " + ulaz.getKey() + " entropija = " + ulaz.getValue());
 				}
 				znacajkaGranaEntropija.put(znacajke[i], new HashMap<>(granaEntropija));
 				grana.setInformacijskaDobit(informacijskaDobit);
@@ -246,7 +250,10 @@ public class ID3 {
 			
 			while(!imaSirenja) {
 				
-				Map<String, Double> dijeteID = new HashMap<>();
+				Map<String, Double> dijeteID = new TreeMap<>();
+				if (pomStablo.size() == 0) {
+					break;
+				}
 				Cvor cvorZaSirenje = pomStablo.get(0);
 				pomStablo.remove(0);
 				
@@ -258,8 +265,8 @@ public class ID3 {
 				for (String s: cvorZaSirenje.getGraneDjeca()) {
 					//granaEntropija = new HashMap<>();
 					Double entropijaGrane = cvorZaSirenje.getGranaEntropija().get(s);
-					System.out.println("Znacajka = " + cvorZaSirenje.getZnacajka() + " grana = " + s + 
-							" entropija grane = " + entropijaGrane);
+				System.out.println("Znacajka = " + cvorZaSirenje.getZnacajka() + " grana = " + s + 
+					" entropija grane = " + entropijaGrane);
 
 					Cvor cvorZaDodavanje = new Cvor(null);
 					if (entropijaGrane == 0.0) {
@@ -269,9 +276,10 @@ public class ID3 {
 						noviCvor.setGranaRoditelj(s);
 						noviCvor.setCvorRoditelj(cvorZaSirenje.getZnacajka());
 						noviCvor.setRoditelj(cvorZaSirenje);
+						noviCvor.setDubina(cvorZaSirenje.getDubina() + 1);
 						/*RACUNANJE VRIJEDNOSTI LISTA*/
 						stablo.add(noviCvor);
-						System.out.println("Dodao sam list " + noviCvor.toString());
+						//System.out.println("Dodao sam list " + noviCvor.toString());
 						}
 					
 					else {
@@ -288,9 +296,10 @@ public class ID3 {
 								 
 								String pomZnacajkaFilter = znacajkaRoditeljFilter;
 								
-								Cvor roditeljFilter = stablo.stream().
+								/*Cvor roditeljFilter = stablo.stream().
 								filter(cvorStablo -> cvorStablo.getZnacajka().equals(pomZnacajkaFilter)).
-								findFirst().orElse(null);
+								findFirst().orElse(null);*/
+								Cvor roditeljFilter = stariCvorFilter.getRoditelj();
 								if (roditeljFilter == null) {
 									imaRoditeljaFilter = false;
 								}
@@ -298,6 +307,7 @@ public class ID3 {
 									
 									znacajkaRoditeljFilter = roditeljFilter.getCvorRoditelj();
 									stabloFilter.add(roditeljFilter);
+									stariCvorFilter = roditeljFilter;
 								}
 							}
 							
@@ -313,9 +323,9 @@ public class ID3 {
 									for (String cilj: mapaZnacajkaVrijednosti.get(ciljnaVarijabla)) {
 										//System.out.println("Cilj = " + cilj);
 										broj = znacajkaZaVrijednost.get(cvorZaSirenje.getZnacajka()).get(s).get(cilj);
-										if (broj == null) {
+										/*if (broj == null) {
 											broj = 0;
-										}
+										}*/
 										nazivnik += broj;
 										brojnici.add(broj);
 									}
@@ -328,14 +338,14 @@ public class ID3 {
 									}
 									
 								Double infoDobitMala = entropijaGrane;
-								System.out.println("Info dobit mala prije = " + entropijaGrane);
+								//System.out.println("Info dobit mala prije = " + entropijaGrane);
 								String dijete = new String();
-								//System.out.println("infor dobit mala prije " + infoDobitMala);
+								System.out.println("Entropija prije " + infoDobitMala);
 								Integer velikiNazivnik = 0;
 								List<Double> umnosci = new ArrayList<>();
 								for(Map.Entry<String, Map<String, Integer>> entry: znacajkaZaVrijednost.get(znacajka).entrySet()) {
 									//granaEntropija.clear();
-									System.out.println("Key " + entry.getKey());
+									//System.out.println("Key " + entry.getKey());
 									dijete = entry.getKey();
 									Integer maliNazivnik = 0;
 									//velikiNazivnik = 0;
@@ -394,24 +404,31 @@ public class ID3 {
 											
 											}
 											
-											System.out.println("BrojnikID = " + brojnikID);
+											//System.out.println("BrojnikID = " + brojnikID);
 											maliNazivnik += brojnikID;
 											
 											malaLista.add(brojnikID);
 										}
 										
 										
-										System.out.println("mali nazivnik " + maliNazivnik);
+										//System.out.println("mali nazivnik " + maliNazivnik);
 										velikiNazivnik += maliNazivnik;
 										Double maliRazlomak = 0.0;
 										Double novaEntropija = 0.0;
-										if (malaLista.contains(0)) {
-											malaEntropija = 0.0;
+										if (maliNazivnik == 0) {
+											novaEntropija -= 0;
 										}
 										else {
 										for (Integer noviBroj: malaLista) {
+											if (noviBroj == 0) {
+												novaEntropija -= 0;
+											}
+											else {
 											maliRazlomak = Double.valueOf(noviBroj) / maliNazivnik;
+											System.out.println();
 											novaEntropija -= maliRazlomak * (Math.log(maliRazlomak) / Math.log(2));
+											}
+											System.out.println(noviBroj + "/" + maliNazivnik);
 										}
 										}
 										
@@ -427,14 +444,14 @@ public class ID3 {
 								for (Double umnozak: umnosci) {
 									infoDobitMala -= Double.valueOf(umnozak) / velikiNazivnik;
 								}
-								System.out.println("Mala infor dobit " + Math.round(infoDobitMala * Math.pow(10, 5)) / Math.pow(10, 5));
-								dijeteID.put(znacajka, infoDobitMala);
+								System.out.println("INFO DOBIT: " + Math.round(infoDobitMala * Math.pow(10, 5)) / Math.pow(10, 5));
+								dijeteID.put(znacajka, Math.round(infoDobitMala * Math.pow(10, 5)) / Math.pow(10, 5));
 								znacajkaGranaEntropija.put(znacajka, new HashMap<>(granaEntropija));
 								}
 							}
 							
 							String podIspis = new String();
-							Double maxInfoDobit = 0.0;
+							Double maxInfoDobit = -10000000.0;
 							String maxZnacajkaMala = new String();
 							for(Map.Entry<String, Double> entry: dijeteID.entrySet()) {
 								podIspis += "IG(" + entry.getKey() + ")=" + entry.getValue() + " ";
@@ -445,25 +462,36 @@ public class ID3 {
 								}
 							}
 							
+							System.out.println(podIspis);
+							
 							for(Map.Entry<String, Map<String, Double>> kraj: znacajkaGranaEntropija.entrySet()) {
-								System.out.println("DIjete " + kraj.getKey());
+								//System.out.println("DIjete " + kraj.getKey());
 								for(Map.Entry<String, Double> krajGrana: kraj.getValue().entrySet()) {
-									System.out.println("Grana " + krajGrana.getKey() + " entropija " + krajGrana.getValue());
+									//System.out.println("Grana " + krajGrana.getKey() + " entropija " + krajGrana.getValue());
 								}
 							}
-							if (podIspis.length() > 0) {
-								}
+
 							granaDijete.put(s, maxZnacajkaMala);
-							System.out.println("Max znacajka mala " + maxZnacajkaMala);
+							
+							//System.out.println("Max znacajka mala " + maxZnacajkaMala);
+							if (maxZnacajkaMala.length() < 1) {
+								cvorZaDodavanje.setZnacajka(null);
+							}
+							else {
 							cvorZaDodavanje.setZnacajka(maxZnacajkaMala);
+							}
 							cvorZaDodavanje.setInformacijskaDobit(maxInfoDobit);
 							cvorZaDodavanje.setEntropija(22.5);
 							cvorZaDodavanje.setGranaRoditelj(s);
 							cvorZaDodavanje.setCvorRoditelj(cvorZaSirenje.getZnacajka());
 							cvorZaDodavanje.setGranaEntropija(znacajkaGranaEntropija.get(maxZnacajkaMala));
 							cvorZaDodavanje.setRoditelj(cvorZaSirenje);
+							cvorZaDodavanje.setDubina(cvorZaSirenje.getDubina() + 1);
+							System.out.println("MAX ZNACAJKA " + maxZnacajkaMala);
+							if (maxZnacajkaMala.length() > 0) {
 							for (String grana: mapaZnacajkaVrijednosti.get(maxZnacajkaMala)) {
 								cvorZaDodavanje.dodajGranu(grana);
+								}
 							}
 
 							if (maxZnacajkaMala.length() < 1) {
@@ -491,7 +519,186 @@ public class ID3 {
 				
 			}
 			int brojacGrana = 0;
+			//System.out.println("Parametar dubina = " + parametarDubina);
 			System.out.println("[BRANCHES]:");
+
+			if (parametarDubina == 0) {
+				Cvor korijenCvor = stablo.get(0);
+				Map<String, Integer> ciljnaPojave = new HashMap<>();
+				for (String ciljna: mapaZnacajkaVrijednosti.get(ciljnaVarijabla)) {
+					//System.out.println("Ciljna = " + ciljna);
+					for (int i = 0; i < sveVrijednostiCiljneVarijable.size(); i++) {
+						if ((sveVrijednostiCiljneVarijable.get(i).equals(ciljna))) {
+							Integer pomPojave = ciljnaPojave.get(ciljna);
+							if (pomPojave == null) {
+								pomPojave = 0;
+							}
+							pomPojave++;
+
+							ciljnaPojave.put(ciljna, pomPojave);
+						}
+							
+					}
+				}
+				String ciljnaMax = new String();
+				int pojaveMax = 0;
+				for (Map.Entry<String, Integer> entry: ciljnaPojave.entrySet()) {
+					if (entry.getValue() > pojaveMax) {
+						pojaveMax = entry.getValue();
+						ciljnaMax = entry.getKey();
+					}
+				}
+				//System.out.println(ciljnaMax);
+			}
+			
+			else if (parametarDubina > 0) {
+				for (Cvor cvor: stablo) {
+					Map<String, String> pomMapaKraj = new HashMap<>();
+					List<Cvor> put = new ArrayList<>();
+					if ((cvor.getDubina() == parametarDubina) || 
+							(cvor.getList() && cvor.getDubina() <= parametarDubina)) {
+						//System.out.println("cvor na dubini 1 = " + cvor.toString());
+						put = new ArrayList<>();
+						boolean imaRoditelja = true;
+						String znacajkaRoditelj = cvor.getCvorRoditelj();
+						Map<String, String> stabloGrana = new LinkedHashMap<>();
+						Cvor stariCvor = cvor;
+						while (imaRoditelja) {
+
+							Cvor roditelj = stariCvor.getRoditelj();
+							if (roditelj == null) {
+								imaRoditelja = false;
+							}
+							else {
+								put.add(roditelj);
+								stabloGrana.put(roditelj.getZnacajka(), stariCvor.getGranaRoditelj());
+								znacajkaRoditelj = roditelj.getCvorRoditelj();
+								stariCvor = roditelj;
+							}
+							}
+						
+						String ispisPuta = new String();
+						Integer brojac = 1;
+						List<Integer> indeksi = new ArrayList<>();
+						//https://www.benchresources.net/how-to-iterate-through-linkedhashmap-in-reverse-order-in-java/
+						List<String> obrnutiKljucevi = new ArrayList<>(stabloGrana.keySet());
+						Collections.reverse(obrnutiKljucevi);
+						
+						for (String kljuc: obrnutiKljucevi) {
+							ispisPuta += brojac + ":" + kljuc + "=" + stabloGrana.get(kljuc) + " ";
+							//System.out.println("Kljuc = " + kljuc + " vrijednost " + stabloGrana.get(kljuc));
+							brojac++;
+							pomMapaKraj.put(kljuc, stabloGrana.get(kljuc));
+							for (int i = 0; i < mapaZnacajkaSveVrijednosti.get(kljuc).size(); i++) {
+								if (mapaZnacajkaSveVrijednosti.get(kljuc).get(i).equals(stabloGrana.get(kljuc))) {
+									indeksi.add(i);
+								}
+
+							}
+
+						}
+						
+						int indeksCiljne = 0;
+						String maxVrijednost = new String();
+						if (stabloGrana.size() == 1) {
+							Map<String, Integer> vrijednostBrojac = new HashMap<>();
+							for (Integer indeks: indeksi) {
+								String vrijednost = sveVrijednostiCiljneVarijable.get(indeks);
+								Integer brojacVrijednosti = vrijednostBrojac.get(vrijednost);
+								if (brojacVrijednosti == null) {
+									brojacVrijednosti = 0;
+								}
+								brojacVrijednosti++;
+								vrijednostBrojac.put(vrijednost, brojacVrijednosti);
+							}
+							
+							int maxPojava = 0;
+							maxVrijednost = new String();
+							for (Map.Entry<String, Integer> entry: vrijednostBrojac.entrySet()) {
+								if (entry.getValue() > maxPojava) {
+									maxPojava = entry.getValue();
+									maxVrijednost = entry.getKey();
+								}
+								if (entry.getValue() == maxPojava) {
+									String prva = maxVrijednost;
+									String druga = entry.getKey();
+									if (prva.compareTo(druga) > 0) {
+										maxVrijednost = entry.getKey();
+									}
+								}
+							}
+	
+						}
+						
+						else {
+							
+						int maxPojave = 0;
+						//System.out.println("INDEKSI");
+						Map<Integer, Integer> indeksPojave = new HashMap<>();
+						for (Integer indeks: indeksi) {
+							//System.out.println(indeks);
+							int pojave = Collections.frequency(indeksi, indeks);
+							//System.out.println("Pojave " + pojave);
+							if (pojave > maxPojave) {
+
+								maxPojave = pojave;
+
+								}
+
+							}
+						Map<String, Integer> vrijednostBrojac = new HashMap<>();
+						//System.out.println("NAJJACI INDEKSI");
+						Set<Integer> bezDuplikata = new HashSet<>(indeksi);
+						for (Integer indeks: indeksi) {
+							int pojave = Collections.frequency(indeksi, indeks);
+							if (pojave == maxPojave) {
+								//System.out.println(indeks);
+								String vrijednost = sveVrijednostiCiljneVarijable.get(indeks);
+								Integer brojacVrijednosti = vrijednostBrojac.get(vrijednost);
+								if (brojacVrijednosti == null) {
+									brojacVrijednosti = 0;
+								}
+								brojacVrijednosti++;
+								vrijednostBrojac.put(vrijednost, brojacVrijednosti);
+							}
+						}
+						int maxPojava = 0;
+						maxVrijednost = new String();
+						for (Map.Entry<String, Integer> entry: vrijednostBrojac.entrySet()) {
+							if (entry.getValue() > maxPojava) {
+								maxPojava = entry.getValue();
+								maxVrijednost = entry.getKey();
+							}
+							
+						}
+						
+						for (Map.Entry<String, Integer> entry: vrijednostBrojac.entrySet()) {
+							if (entry.getValue() == maxPojava) {
+								String prva = maxVrijednost;
+								String druga = entry.getKey();
+								//System.out.println("Prva = " + prva + " druga = " + druga);
+								if (prva.compareTo(druga) > 0) {
+									maxVrijednost = entry.getKey();
+								}
+							}
+						}
+						
+	
+						}
+						pomMapaKraj.put(null, maxVrijednost);
+						ispisPuta += maxVrijednost;
+						System.out.println(ispisPuta);
+						mapaGrane.put(brojacGrana, new HashMap<>(pomMapaKraj));
+						brojacGrana++;
+						
+						
+					}
+				}
+				
+				
+			}
+			
+			else {
 			for (Cvor cvor: stablo) {
 				Map<String, String> pomMapaKraj = new HashMap<>();
 				List<Cvor> put = new ArrayList<>();
@@ -557,7 +764,7 @@ public class ID3 {
 				System.out.println(ispisPuta);
 				mapaGrane.put(brojacGrana, new HashMap<>(pomMapaKraj));
 				brojacGrana++;
-
+					}
 				}
 			}
 		
@@ -565,9 +772,9 @@ public class ID3 {
 		
 	}
 	
-	public static  void predict(File datotekaProvjera) throws FileNotFoundException {
+	public void predict(File datotekaProvjera) throws FileNotFoundException {
 		
-Scanner scanProvjera = new Scanner(datotekaProvjera, "UTF-8");
+		Scanner scanProvjera = new Scanner(datotekaProvjera, "UTF-8");
 		List<String> predvidanja = new ArrayList<>();
 		String ispisPredvidanja = new String();
 		
@@ -696,7 +903,53 @@ Scanner scanProvjera = new Scanner(datotekaProvjera, "UTF-8");
 		}
 
 		Double ucinkovitost = Double.valueOf(pogodak) / (mapaZnacajkaSveVrijednostiTest.get(ciljnaVarijabla).size());
-		System.out.printf("[ACCURACY]: %.5f", Math.round(ucinkovitost * Math.pow(10, 5)) / Math.pow(10, 5));
+		System.out.printf("[ACCURACY]: %.5f\n", Math.round(ucinkovitost * Math.pow(10, 5)) / Math.pow(10, 5));
+		
+		Set<String> jedinstveneVrijednostiStvarna = new TreeSet<>(mapaZnacajkaSveVrijednostiTest.get(ciljnaVarijabla));
+		Set<String> jedinstveneVrijednostiPredvidena = new TreeSet<>(predvidanja);
+		List<String> sortiranoZaMatricuStvarna = new ArrayList<>(jedinstveneVrijednostiStvarna);
+		List<String> sortiranoZaMatricuPredvidena = new ArrayList<>(jedinstveneVrijednostiPredvidena);
+		//Collections.sort(sortiranoZaMatricuStvarna);
+		//Collections.sort(sortiranoZaMatricuPredvidena);
+		System.out.println("sortiranoZaMatricuStvarna ");
+		for (String s: sortiranoZaMatricuStvarna) {
+			System.out.println(s);
+		}
+		System.out.println("sortiranoZaMatricuPredvidena");
+		for (String s: sortiranoZaMatricuPredvidena) {
+			System.out.println(s);
+		}
+		Map<Integer, Integer> indeksPojave = new TreeMap<>();
+		for (int i = 0; i < (sortiranoZaMatricuStvarna.size() * sortiranoZaMatricuStvarna.size()); i++) {
+			System.out.println("indweks pojave " + i);
+			indeksPojave.put(i, 0);
+		}
+		
+		for (int i = 0; i < sortiranoZaMatricuStvarna.size(); i++) {
+			
+			for (int j = 0; j < sortiranoZaMatricuPredvidena.size(); j++) {
+				
+				for (int k = 0; k < mapaZnacajkaSveVrijednostiTest.get(ciljnaVarijabla).size(); k++) {
+				if ((mapaZnacajkaSveVrijednostiTest.get(ciljnaVarijabla).get(k).equals(sortiranoZaMatricuStvarna.get(i))) &&
+					(predvidanja.get(k).equals(sortiranoZaMatricuPredvidena.get(j)))) {
+					int pojave = indeksPojave.get((i * sortiranoZaMatricuStvarna.size()) + j);
+					pojave++;
+					indeksPojave.put((i * sortiranoZaMatricuStvarna.size()) + j, pojave);
+					}	
+				}
+			}
+		}
+		System.out.println("[CONFUSION_MATRIX]:");
+		for (int i = 0; i < sortiranoZaMatricuStvarna.size(); i++) {
+			String ispisReda = new String();
+			for (int j = 0; j < sortiranoZaMatricuStvarna.size(); j++) {
+				
+				ispisReda += (indeksPojave.get((i * sortiranoZaMatricuStvarna.size()) + j));
+				ispisReda += " ";
+				}
+			System.out.println(ispisReda);
+		}
+		
 		
 		scanProvjera.close();
 	}

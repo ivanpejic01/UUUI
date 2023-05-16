@@ -18,6 +18,8 @@ public class Cvor {
 	private Map<String, Double> granaEntropija;
 	private Map<String, String> granaDijete;
 	private Cvor roditelj;
+	private int dubina;
+	
 	public Cvor(String znacajka) {
 		this.znacajka = znacajka;
 		this.informacijskaDobit = 0.0;
@@ -30,6 +32,7 @@ public class Cvor {
 		this.granaEntropija = new HashMap<>();
 		this.granaDijete = new HashMap<>();
 		this.roditelj = null;
+		dubina = 0;
 	}
 	 
 	
@@ -110,6 +113,14 @@ public class Cvor {
 	
 	public Map<String, String> getGranaDijete() {
 		return this.granaDijete;
+	}
+	
+	public int getDubina() {
+		return this.dubina;
+	}
+	
+	public void setDubina(int dubina) {
+		this.dubina = dubina;
 	}
 	@Override
 	public String toString() {
