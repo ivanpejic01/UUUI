@@ -3,7 +3,7 @@ package ui;
 import java.io.File;
 import java.io.FileNotFoundException;
 
-
+//glavna klasa cija metoda main sluzi za pozivanje metoda fit i predict iz klase ID3
 public class Solution {
 
 	public static String putanjaDatotekaUcenje = new String();
@@ -18,25 +18,21 @@ public class Solution {
 	
 		putanjaDatotekaUcenje = args[0];
 		putanjaDatotekaProvjera = args[1];
-		//https://www.freecodecamp.org/news/java-string-to-int-how-to-convert-a-string-to-an-integer/
 		if (args.length == 3) {
+			//https://www.freecodecamp.org/news/java-string-to-int-how-to-convert-a-string-to-an-integer/
 			parametarDubina = Integer.parseInt(args[2]);
 		}
 		else {
 			parametarDubina = -1;
 		}
-		System.out.println("Ucenje " + putanjaDatotekaUcenje + " provjera: " + putanjaDatotekaProvjera);
 		
 		datotekaUcenje = new File(putanjaDatotekaUcenje);
 		datotekaProvjera = new File(putanjaDatotekaProvjera);
 		
+		//u mojoj implementaciji obje metode su void
 		model.fit(datotekaUcenje, parametarDubina);
 		model.predict(datotekaProvjera);
-		
-		
-		
-		
-		
+			
 	}
 
 	
